@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+
+import sys
+import sqlite3
+# from classes.dbTools import *
+
+
+class DbControl():
+
+	def __init__(self):
+
+		self.conn = sqlite3.connect('assets/tldt.db')
+		self.c = self.conn.cursor()
+
+	def digestInput(self):
+
+		if len(sys.argv) < 3  or len(sys.argv) > 4:
+
+			self.printHelpString()
+			exit()
+
+		elif str(sys.argv[1]) == '-e':
+			
+			for w in self.selectByEnWord(sys.argv[2]):
+				print(w[0])
+
+		elif str(sys.argv[1]) == '-g':
+			
+			for w in self.selectByDeWord(sys.argv[2]):
+				print(w[0])
+
+		elif str(sys.argv[1]) == '-a' and sys.argv[3]:
+
+			self.addWordSnowdon()
+
+		elif str(sys.argv[1]) == '-d' and sys.argv[3]:
+
+			self.deleteWordSnowdon()
+
+		else:
+			print('no, just no. try -h')
+			exit()
+
+	def deleteWordSnowdon(self):
+
+		# self.c.execute('SELECT * FROM words where deWord = ? and enWord = ?',
+		# 	(str(sys.argv[2]), str(sys.argv[3])))
+		# sqltest = self.c.fetchone()
+
+		# if sqltest:
+		self.c.execute('DELETE FROM words WHERE deWord = ? AND enWord = ?', 
+			(str(sys.argv[2]), str(sys.argv[3])))
+		self.conn.commit()
+		print('deleted: ', str(sys.argv[2]), str(sys.argv[3]))
+
+
+	def addWordSnowdon(self):
+
+		self.c.execute('SELECT * FROM words where deWord = ? and enWord = ?',
+			(str(sys.argv[2]), str(sys.argv[3])))
+		sqltest = self.c.fetchone()
+		# print(sqltest)
+		if not sqltest:
+			self.c.execute('INSERT INTO words VALUES (?,?)', (sys.argv[2], sys.argv[3]))
+			self.conn.commit()
+			print('saved:', str(sys.argv[2]), str(sys.argv[3]))
+		else:
+			print('Schweinesystem!')
+
+	def selectByEnWord(self, e):
+		# print(e)
+		self.c.execute('SELECT deWord FROM words WHERE enWord = (?)', (e,))
+		wordlist = self.c.fetchall()
+		return wordlist
+
+	def selectByDeWord(self, d):
+
+		self.c.execute('SELECT enWord FROM words WHERE deWord = (?)', (d,))
+		wordlist = self.c.fetchall()
+		return wordlist
+
+	def printHelpString(self):
+
+		print('tldt OPTIONS (En|De)word [Enword]')
+		print('OPTIONS:')
+		print('-a Add new WordPair (first GermanWord, then EnglishWord)')
+		print('-d Delete WordPair (first GermanWord, then EnglishWord)')
+		print('-e Translate from English to German')
+		print('-g Translate from German to English')
+		print('-h Print this really helpful Message, duh')
+
+def main():
+	
+	d = DbControl()
+	d.digestInput()
+main()
